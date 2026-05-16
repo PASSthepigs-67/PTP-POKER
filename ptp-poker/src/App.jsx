@@ -1,34 +1,40 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./supabase";
 
 export default function App() {
-  const [players, setPlayers] = useState(() => {
-    try {
-      const saved = localStorage.getItem("players");
-      const data = saved ? JSON.parse(saved) : [];
-      return data.length ? data : [{ name: "Ash", chips: 75, bank: 0 }];
-    } catch {
-      return [{ name: "Ash", chips: 75, bank: 0 }];
-    }
-  });
-
+  const [players, setPlayers] = useState([]);
   const [newPlayer, setNewPlayer] = useState("");
 
-  useEffect(() => {
-    localStorage.setItem("players", JSON.stringify(players));
-  }, [players]);
-
-  const addPlayer = () => {
-    if (!newPlayer) return;
-    setPlayers([...players, { name: newPlayer, chips: 75, bank: 0 }]);
-    setNewPlayer("");
+  // LOAD PLAYERS
+  const fetchPlayers = async () => {
+    const { data } = await supabase.from("players").select("*");
+    if (data) setPlayers(data);
   };
 
+  useEffect(() => {
+    fetchPlayers();
+  }, []);
+
+  // ADD PLAYER
+  const addPlayer = async () => {
+    if (!newPlayer) return;
+
+    await supabase.from("players").insert([
+      { name: newPlayer, chips: 75, bank: 0 }
+    ]);
+
+    setNewPlayer("");
+    fetchPlayers();
+  };
+
+  // SORT BY TOTAL
   const sortedPlayers = [...players].sort(
     (a, b) => (b.chips + b.bank) - (a.chips + a.bank)
   );
 
   const topProfit = Math.max(
-    ...players.map((p) => p.chips + p.bank - 75)
+    ...players.map((p) => p.chips + p.bank - 75),
+    0
   );
 
   return (
@@ -46,22 +52,28 @@ export default function App() {
       {/* RESET BUTTONS */}
       <div style={{ marginTop: 10 }}>
         <button
-          onClick={() => {
-            const updated = players.map((p) => ({ ...p, bank: 0 }));
-            setPlayers(updated);
+          onClick={async () => {
+            for (const p of players) {
+              await supabase
+                .from("players")
+                .update({ bank: 0 })
+                .eq("id", p.id);
+            }
+            fetchPlayers();
           }}
         >
           New Day (Reset Bank)
         </button>
 
         <button
-          onClick={() => {
-            const updated = players.map((p) => ({
-              ...p,
-              chips: 75,
-              bank: 0,
-            }));
-            setPlayers(updated);
+          onClick={async () => {
+            for (const p of players) {
+              await supabase
+                .from("players")
+                .update({ chips: 75, bank: 0 })
+                .eq("id", p.id);
+            }
+            fetchPlayers();
           }}
         >
           Reset Season
@@ -90,16 +102,12 @@ export default function App() {
 
         <tbody>
           {sortedPlayers.map((p, i) => {
-            const realIndex = players.findIndex(
-              (player) => player.name === p.name
-            );
-
             const total = p.chips + p.bank;
             const profit = total - 75;
 
             return (
               <tr
-                key={i}
+                key={p.id}
                 style={{
                   textAlign: "center",
                   opacity: p.chips === 0 ? 0.5 : 1,
@@ -107,26 +115,24 @@ export default function App() {
               >
                 {/* POSITION */}
                 <td>
+                  {i === 0 && "🥇 "}
+                  {i === 1 && "🥈 "}
+                  {i === 2 && "🥉 "}
                   {i + 1}
                 </td>
 
-                {/* NAME */}
                 <td>{p.name}</td>
-
-                {/* CHIPS */}
                 <td>{p.chips}</td>
-
-                {/* BANK */}
                 <td>{p.bank}</td>
 
-                {/* TOTAL */}
                 <td style={{ fontWeight: "bold" }}>{total}</td>
 
-                {/* PROFIT */}
                 <td
                   style={{
                     color: profit >= 0 ? "lime" : "red",
                     fontWeight: "bold",
+                    backgroundColor:
+                      profit === topProfit ? "#003300" : "transparent",
                   }}
                 >
                   {profit}
@@ -135,58 +141,67 @@ export default function App() {
                 {/* ACTIONS */}
                 <td>
                   <button
-                    onClick={() => {
-                      const updated = [...players];
-                      updated[realIndex].chips += 5;
-                      setPlayers(updated);
+                    onClick={async () => {
+                      await supabase
+                        .from("players")
+                        .update({ chips: p.chips + 5 })
+                        .eq("id", p.id);
+                      fetchPlayers();
                     }}
                   >
                     +5
                   </button>
 
                   <button
-                    onClick={() => {
-                      const updated = [...players];
-                      updated[realIndex].chips = Math.max(
-                        0,
-                        updated[realIndex].chips - 5
-                      );
-                      setPlayers(updated);
+                    onClick={async () => {
+                      await supabase
+                        .from("players")
+                        .update({
+                          chips: Math.max(0, p.chips - 5),
+                        })
+                        .eq("id", p.id);
+                      fetchPlayers();
                     }}
                   >
                     -5
                   </button>
 
                   <button
-                    onClick={() => {
-                      const updated = [...players];
-                      updated[realIndex].bank += 5;
-                      setPlayers(updated);
+                    onClick={async () => {
+                      await supabase
+                        .from("players")
+                        .update({ bank: p.bank + 5 })
+                        .eq("id", p.id);
+                      fetchPlayers();
                     }}
                   >
                     +B
                   </button>
 
                   <button
-                    onClick={() => {
-                      const updated = [...players];
-                      updated[realIndex].bank = Math.max(
-                        0,
-                        updated[realIndex].bank - 5
-                      );
-                      setPlayers(updated);
+                    onClick={async () => {
+                      await supabase
+                        .from("players")
+                        .update({
+                          bank: Math.max(0, p.bank - 5),
+                        })
+                        .eq("id", p.id);
+                      fetchPlayers();
                     }}
                   >
                     -B
                   </button>
 
                   <button
-                    onClick={() => {
-                      const updated = [...players];
-                      updated[realIndex].chips +=
-                        updated[realIndex].bank;
-                      updated[realIndex].bank = 0;
-                      setPlayers(updated);
+                    onClick={async () => {
+                      await supabase
+                        .from("players")
+                        .update({
+                          chips: p.chips + p.bank,
+                          bank: 0,
+                        })
+                        .eq("id", p.id);
+                      fetchPlayers();
                     }}
                   >
                     💰
