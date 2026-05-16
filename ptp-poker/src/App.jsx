@@ -1,9 +1,14 @@
 import { useState } from "react";
 
 export default function App() {
-  const [players, setPlayers] = useState([
-    { name: "Ash", chips: 75, bank: 0 },
-  ]);
+  const [players, setPlayers] = useState(() => {
+    const saved = localStorage.getItem("players");
+    return saved ? JSON.parse(saved) : [{name: "Ashton", chips: 75, bank = 0, powerupsused: 0}];
+  });
+  import { useEffect } from "react";
+  useEffect(() => {
+    localStorage.setItem("players", JSON.stringify(players));
+  }, [players]);
   const [newPlayer, setNewPlayer] = useState("");
 
   const addPlayer = () => {
@@ -34,6 +39,7 @@ export default function App() {
   };
 
   const sortedPlayers = [...players].sort((a, b) => b.chips - a.chips);
+  <h2>{index + 1}. {player.name}</h2>
 
   return (
     <div style={{ padding: 20, background: "black", minHeight: "100vh", color: "white" }}>
@@ -46,7 +52,19 @@ export default function App() {
           placeholder="Player name"
         />
         <button onClick={addPlayer}>Add Player</button>
+        <button onClick={() => setPlayers([])}>RESET ALL PLAYERS</button>
       </div>
+
+      <button onClick={() => {
+        const updated = players.map(p => ({ ...p, bank: 0}));
+        setPlayers(updated);
+      }}>New day(resets bank)</button>
+
+      <button onClick={() => {
+        const updated = [...players];
+        updated[index].powerupsused += 1;
+        setPlayers(updated);
+      }}>Used power up</button>
 
       {sortedPlayers.map((player, index) => (
         <div key={index} style={{ marginBottom: 15, border: "1px solid gray", padding: 10 }}>
