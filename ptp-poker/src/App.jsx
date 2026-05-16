@@ -12,8 +12,28 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchPlayers();
-  }, []);
+  fetchPlayers();
+
+  const channel = supabase
+    .channel("players-changes")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "players",
+      },
+      (payload) => {
+        console.log("Change detected:", payload);
+        fetchPlayers();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, []);
 
   // ADD PLAYER
   const addPlayer = async () => {
