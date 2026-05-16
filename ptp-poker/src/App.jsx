@@ -23,11 +23,19 @@ export default function App() {
     setNewPlayer("");
   };
 
-const sortedPlayers = [...players].sort((a, b) => b.chips - a.chips);
+  const sortedPlayers = [...players].sort(
+    (a, b) => (b.chips + b.bank) - (a.chips + a.bank)
+  );
+
+  const topProfit = Math.max(
+    ...players.map((p) => p.chips + p.bank - 75)
+  );
+
   return (
     <div style={{ padding: 20 }}>
-      <h1>PTP Poker Dashboard</h1>
+      <h1>🏆 PTP Poker Dashboard</h1>
 
+      {/* ADD PLAYER */}
       <input
         value={newPlayer}
         onChange={(e) => setNewPlayer(e.target.value)}
@@ -35,90 +43,160 @@ const sortedPlayers = [...players].sort((a, b) => b.chips - a.chips);
       />
       <button onClick={addPlayer}>Add Player</button>
 
-      <button onClick={() => {
-  const updated = players.map(p => ({ ...p, bank: 0 }));
-  setPlayers(updated);
-}}>
-  New Day (Reset Bank)
-</button>
-
-<button onClick={() => {
-  setPlayers(players.map(p => ({...p, chips: 75, bank: 0 })));
-}}>
-  Reset Season
-</button>
-
-
- <table style={{ width: "100%", marginTop: 20, borderCollapse: "collapse" }}>
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Name</th>
-      <th>Chips</th>
-      <th>Bank</th>
-      <th>Total</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-
-  <tbody>
-    {sortedPlayers.map((p, i) => {
-      const realIndex = players.findIndex(player => player.name === p.name);
-
-      return (
-        <tr
-          key={i}
-          style={{
-            textAlign: "center",
-            opacity: p.chips === 0 ? 0.5 : 1
+      {/* RESET BUTTONS */}
+      <div style={{ marginTop: 10 }}>
+        <button
+          onClick={() => {
+            const updated = players.map((p) => ({ ...p, bank: 0 }));
+            setPlayers(updated);
           }}
         >
-          <td>
-            {i + 1}
-          </td>
+          New Day (Reset Bank)
+        </button>
 
-          <td>{p.name}</td>
-          <td>{p.chips}</td>
-          <td>{p.bank}</td>
-          <td style={{ fontWeight: "bold" }}>{p.chips + p.bank}</td>
+        <button
+          onClick={() => {
+            const updated = players.map((p) => ({
+              ...p,
+              chips: 75,
+              bank: 0,
+            }));
+            setPlayers(updated);
+          }}
+        >
+          Reset Season
+        </button>
+      </div>
 
-          <td>
-            <button onClick={() => {
-              const updated = [...players];
-              updated[realIndex].chips += 5;
-              setPlayers(updated);
-            }}>+5</button>
+      {/* TABLE */}
+      <table
+        style={{
+          width: "100%",
+          marginTop: 20,
+          borderCollapse: "collapse",
+        }}
+      >
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Chips</th>
+            <th>Bank</th>
+            <th>Total</th>
+            <th>Profit</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
 
-            <button onClick={() => {
-              const updated = [...players];
-              updated[realIndex].chips = Math.max(0, updated[realIndex].chips - 5);
-              setPlayers(updated);
-            }}>-5</button>
+        <tbody>
+          {sortedPlayers.map((p, i) => {
+            const realIndex = players.findIndex(
+              (player) => player.name === p.name
+            );
 
-            <button onClick={() => {
-              const updated = [...players];
-              updated[realIndex].bank += 5;
-              setPlayers(updated);
-            }}>+B</button>
+            const total = p.chips + p.bank;
+            const profit = total - 75;
 
-            <button onClick={() => {
-              const updated = [...players];
-              updated[realIndex].bank = Math.max(0, updated[realIndex].bank - 5);
-              setPlayers(updated);
-            }}>-B</button>
+            return (
+              <tr
+                key={i}
+                style={{
+                  textAlign: "center",
+                  opacity: p.chips === 0 ? 0.5 : 1,
+                }}
+              >
+                {/* POSITION */}
+                <td>
+                  {i + 1}
+                </td>
 
-            <button onClick={() => {
-              const updated = [...players];
-              updated[realIndex].chips += updated[realIndex].bank;
-              updated[realIndex].bank = 0;
-              setPlayers(updated);
-            }}>💰</button>
-          </td>
-        </tr>
-      );
-    })}
-  </tbody>
-</table>
+                {/* NAME */}
+                <td>{p.name}</td>
+
+                {/* CHIPS */}
+                <td>{p.chips}</td>
+
+                {/* BANK */}
+                <td>{p.bank}</td>
+
+                {/* TOTAL */}
+                <td style={{ fontWeight: "bold" }}>{total}</td>
+
+                {/* PROFIT */}
+                <td
+                  style={{
+                    color: profit >= 0 ? "lime" : "red",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {profit}
+                </td>
+
+                {/* ACTIONS */}
+                <td>
+                  <button
+                    onClick={() => {
+                      const updated = [...players];
+                      updated[realIndex].chips += 5;
+                      setPlayers(updated);
+                    }}
+                  >
+                    +5
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const updated = [...players];
+                      updated[realIndex].chips = Math.max(
+                        0,
+                        updated[realIndex].chips - 5
+                      );
+                      setPlayers(updated);
+                    }}
+                  >
+                    -5
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const updated = [...players];
+                      updated[realIndex].bank += 5;
+                      setPlayers(updated);
+                    }}
+                  >
+                    +B
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const updated = [...players];
+                      updated[realIndex].bank = Math.max(
+                        0,
+                        updated[realIndex].bank - 5
+                      );
+                      setPlayers(updated);
+                    }}
+                  >
+                    -B
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const updated = [...players];
+                      updated[realIndex].chips +=
+                        updated[realIndex].bank;
+                      updated[realIndex].bank = 0;
+                      setPlayers(updated);
+                    }}
+                  >
+                    💰
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
-    );
+  );
 }
