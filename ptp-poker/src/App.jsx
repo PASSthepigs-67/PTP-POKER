@@ -36,55 +36,33 @@ export default function App() {
   const sortedPlayers = [...players].sort((a, b) => b.chips - a.chips);
 
   return (
-    <div style={{ padding: 20, background: "black", minHeight: "100vh", color: "white"}}>
-      <h1 className="text-3xl font-bold mb-6">🐷 PTP Poker Dashboard</h1>
+    <div style={{ padding: 20, background: "black", minHeight: "100vh", color: "white" }}>
+      <h1>🐷 PTP Poker Dashboard</h1>
 
-      {/* Add Player */}
-      <div className="mb-6">
+      <div style={{ marginBottom: 20 }}>
         <input
           value={newPlayer}
           onChange={(e) => setNewPlayer(e.target.value)}
           placeholder="Player name"
-          className="p-2 text-black mr-2"
         />
-        <button
-          onClick={addPlayer}
-          className="bg-green-500 px-4 py-2 rounded"
-        >
-          Add Player
-        </button>
+        <button onClick={addPlayer}>Add Player</button>
       </div>
 
-      {/* Players */}
-      <div className="grid gap-4">
-        {sortedPlayers.map((player, index) => (
-          <div
-            key={index}
-            className="p-4 bg-gray-900 rounded flex justify-between items-center"
-          >
-            <div>
-              <h2 className="text-xl font-bold">{player.name}</h2>
-              <p>Chips: {player.chips} PTP$</p>
-              <p className="text-yellow-400">Bank: {player.bank} PTP$</p>
-            </div>
+      {sortedPlayers.map((player, index) => (
+        <div key={index} style={{ marginBottom: 15, border: "1px solid gray", padding: 10 }}>
+          <h2>{player.name}</h2>
+          <p>Chips: {player.chips}</p>
+          <p>Bank: {player.bank}</p>
 
-            <div className="flex gap-2 flex-wrap">
-              {/* Chips */}
-              <button onClick={() => updateChips(index, 5)} className="bg-green-600 px-2 py-1 rounded">+5</button>
-              <button onClick={() => updateChips(index, -5)} className="bg-red-600 px-2 py-1 rounded">-5</button>
+          <button onClick={() => updateChips(index, 5)}>+5</button>
+          <button onClick={() => updateChips(index, -5)}>-5</button>
 
-              {/* Bank */}
-              <button onClick={() => updateBank(index, 5)} className="bg-yellow-500 px-2 py-1 rounded">+5 Bank</button>
-              <button onClick={() => updateBank(index, -5)} className="bg-yellow-700 px-2 py-1 rounded">-5 Bank</button>
+          <button onClick={() => updateBank(index, 5)}>+5 Bank</button>
+          <button onClick={() => updateBank(index, -5)}>-5 Bank</button>
 
-              {/* Cash Out */}
-              <button onClick={() => cashOut(index)} className="bg-blue-500 px-2 py-1 rounded">
-                Cash Out
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          <button onClick={() => cashOut(index)}>Cash Out</button>
+        </div>
+      ))}
     </div>
   );
 }
