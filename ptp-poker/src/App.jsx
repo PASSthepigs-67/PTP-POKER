@@ -36,7 +36,7 @@ export default function App() {
   const sortedPlayers = [...players].sort((a, b) => b.chips - a.chips);
 
   return (
-    <div className="p-6 bg-black min-h-screen text-white">
+    <div style={{ padding: 20, background: "black", minHeight: "100vh", color: "white"}}>
       <h1 className="text-3xl font-bold mb-6">🐷 PTP Poker Dashboard</h1>
 
       {/* Add Player */}
