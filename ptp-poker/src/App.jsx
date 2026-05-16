@@ -1,11 +1,11 @@
 import { useState } from "react";
+import { useEffect } from "react";
 
 export default function App() {
   const [players, setPlayers] = useState(() => {
     const saved = localStorage.getItem("players");
     return saved ? JSON.parse(saved) : [{name: "Ashton", chips: 75, bank: 0, powerupsused: 0}];
   });
-  import { useEffect } from "react";
   useEffect(() => {
     localStorage.setItem("players", JSON.stringify(players));
   }, [players]);
