@@ -1,0 +1,9 @@
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background-color: rgba(54, 52, 52, 0.898);
+    color: orangered;
+}
+
+button{
+    border: 5px solid black; 
+}

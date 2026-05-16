@@ -1,0 +1,29 @@
+.container{
+    border: 1px solid;
+    border-radius: 10px;
+    height: 100vh;
+    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+   background: linear-gradient(126deg, #00b774, #3a47fe, #06c7ea);
+    color: #000000;
+}
+
+.displayDate{
+    display: flex;
+    justify-content: center;
+    font-size: 7.25vh;
+    margin-top: 6vh;
+    background-color: #ffffff;
+    border: 3px solid;
+    border-radius: 16px;
+}
+
+#clock{
+    display: flex;
+    justify-content: center;
+    margin-top: 70px;
+    font-size: 20vh;
+    background-color: #ffffff;
+    border: 3px solid;
+    border-radius: 16px;
+    font-family:'Impact', sans-serif;
+}
