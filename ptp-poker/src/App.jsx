@@ -5,7 +5,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [username, setUsername] = useState("");
   const [players, setPlayers] = useState([]);
   const [amounts, setAmounts] = useState({});
 
@@ -50,6 +50,11 @@ export default function App() {
 
   // 🔐 AUTH
   const signUp = async () => {
+  if (!username) {
+    alert("Enter a username");
+    return;
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -60,14 +65,23 @@ export default function App() {
     return;
   }
 
-  // 🔥 Auto login after signup
   const user = data.user;
   setUser(user);
 
-  // 🔥 Create player instantly
+  const { data: existing } = await supabase
+  .from("players")
+  .select("*")
+  .eq("name", username);
+
+if (existing.length > 0) {
+  alert("Username already taken");
+  return;
+}
+
+  // 🔥 create player with custom name
   await supabase.from("players").insert([
     {
-      name: email.split("@")[0],
+      name: username,
       chips: 75,
       bank: 0,
       user_id: user.id,
@@ -134,6 +148,12 @@ export default function App() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+
+        <input
+  placeholder="Username"
+  value={username}
+  onChange={(e) => setUsername(e.target.value)}
+/>
 
         <br /><br />
 
