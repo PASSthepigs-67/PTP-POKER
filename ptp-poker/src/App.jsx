@@ -50,8 +50,30 @@ export default function App() {
 
   // 🔐 AUTH
   const signUp = async () => {
-    await supabase.auth.signUp({ email, password });
-  };
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  // 🔥 Auto login after signup
+  const user = data.user;
+  setUser(user);
+
+  // 🔥 Create player instantly
+  await supabase.from("players").insert([
+    {
+      name: email.split("@")[0],
+      chips: 75,
+      bank: 0,
+      user_id: user.id,
+    },
+  ]);
+};
 
   const signIn = async () => {
   const { data } = await supabase.auth.signInWithPassword({
@@ -116,7 +138,7 @@ export default function App() {
         <br /><br />
 
         <button onClick={signIn}>Login</button>
-        <button onClick={signUp}>Sign Up</button>
+        <button onClick={signUp}>Create Account</button>
       </div>
     );
   }
@@ -217,17 +239,45 @@ export default function App() {
 
     setAmounts({ ...amounts, [p.id]: "" });
   }}>+ Chips</button>
-      <button disabled={!isOwner} style={{ flex: 1 }}>- Chips</button>
+      <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ chips: p.chips - amt })
+      .eq("id", p.id);
+
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>- Chips</button>
     </div>
 
     {/* BANK ACTIONS */}
     <div style={{ display: "flex", gap: 4 }}>
-      <button disabled={!isOwner} style={{ flex: 1 }}>+ Bank</button>
-      <button disabled={!isOwner} style={{ flex: 1 }}>- Bank</button>
+      <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ bank: p.bank + amt })
+      .eq("id", p.id);
+
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>+ Bank</button>
+      <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ bank: p.bank - amt })
+      .eq("id", p.id);
+
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>- Bank</button>
     </div>
 
     {/* CASH OUT */}
-    <button disabled={!isOwner}>💰 Cash Out</button>
+    <button disabled={!isOwner} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ chips: p.chips + p.bank, bank: 0})
+      .eq("id", p.id);
+
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>💰 Cash Out</button>
 
     {!isOwner && (
       <span style={{ fontSize: 12, opacity: 0.5 }}>
