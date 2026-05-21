@@ -1,0 +1,240 @@
+  // 🏆 MAIN APP
+  return (
+    <div style={{ padding: 20 }}>
+      <h1>🏆 PTP Poker</h1>
+
+      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+  <button onClick={() => setPage("dashboard")}>Dashboard</button>
+  <button onClick={() => setPage("history")}>History</button>
+</div>
+
+      <button onClick={signOut}>Logout</button>
+
+      <br /><br />
+
+
+      {/* TABLE */}
+      { page === 'dashboard' &&( <table style={{ width: "100%", marginTop: 20 }}>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Chips</th>
+            <th>Bank</th>
+            <th>Total</th>
+            <th>Profit</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {sortedPlayers.map((p, i) => {
+            const total = p.chips + p.bank;
+            const profit = total - 75;
+            const amt = amounts[p.id] || 0;
+
+            const isOwner = user.id === p.user_id;
+
+            return (
+              <tr
+  key={p.id}
+  style={{
+    textAlign: "center",
+    backgroundColor: user.id === p.user_id ? "#1a1a2e" : "transparent",
+    border: user.id === p.user_id ? "2px solid cyan" : "none",
+  }}
+>
+                <td>
+                  {i === 0 && "🥇 "}
+                  {i === 1 && "🥈 "}
+                  {i === 2 && "🥉 "}
+                  {i + 1}
+                </td>
+
+                <td>{p.name}  {user.id === p.user_id && (
+    <span style={{ marginLeft: 6, color: "cyan", fontWeight: "bold" }}>
+      (You)
+    </span>
+  )}</td>
+                <td>{p.chips}</td>
+                <td>{p.bank}</td>
+                <td>{total}</td>
+
+                <td
+                  style={{
+                    color: profit >= 0 ? "lime" : "red",
+                    fontWeight: "bold",
+                    backgroundColor:
+                      profit === topProfit ? "#003300" : "transparent",
+                  }}
+                >
+                  {profit}
+                </td>
+                
+                <td>
+  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    
+    {/* INPUT */}
+    <input
+      type="number"
+      placeholder="Enter amount"
+      value={amounts[p.id] || ""}
+      onChange={(e) =>
+        setAmounts({
+          ...amounts,
+          [p.id]: Number(e.target.value),
+        })
+      }
+      style={{ width: "100%" }}
+      disabled={!isOwner}
+    />
+
+    {/* CHIP ACTIONS */}
+    <div style={{ display: "flex", gap: 4 }}>
+      <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ chips: p.chips + amt })
+      .eq("id", p.id);
+
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "chips",
+      amount: amt,
+    },
+  ]);
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>+ Chips</button>
+      <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ chips: p.chips - amt })
+      .eq("id", p.id);
+
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "chips",
+      amount: -amt,
+    },
+  ]);
+
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>- Chips</button>
+    </div>
+
+    {/* BANK ACTIONS */}
+    <div style={{ display: "flex", gap: 4 }}>
+      <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ bank: p.bank + amt })
+      .eq("id", p.id);
+
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "bank",
+      amount: amt,
+    },
+  ]);
+
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>+ Bank</button>
+      <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ bank: p.bank - amt })
+      .eq("id", p.id);
+
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "bank",
+      amount: -amt,
+    },
+  ]);
+
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>- Bank</button>
+    </div>
+
+    {/* CASH OUT */}
+    <button disabled={!isOwner} onClick={async () => {
+    await supabase
+      .from("players")
+      .update({ chips: p.chips + p.bank, bank: 0})
+      .eq("id", p.id);
+
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "cashout",
+      amount: p.bank,
+    },
+  ]);
+
+    setAmounts({ ...amounts, [p.id]: "" });
+  }}>💰 Cash Out</button>
+
+    {!isOwner && (
+      <span style={{ fontSize: 12, opacity: 0.5 }}>
+        Not your player
+      </span>
+    )}
+  </div>
+</td>
+               
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      )}
+
+      {page === "history" && (
+  <div>
+    <h2>Transaction History</h2>
+    
+                                 
+  {transactions.map((t, i) => {
+    const name = t.players?.name || "Unknown";
+    const amt = Number(t.amount);
+    let color = amt > 0 ? "limegreen" : "red";
+    
+    let text = "";
+    
+    if (t.type === "chips") {
+      text = `${name}: ${amt > 0 ? "+" : ""}${amt} chips`;
+    }
+    
+    if (t.type === "bank") {
+      text = `${name}: ${amt > 0 ? "+" : ""}${amt} bank`;
+    }
+    
+    if (t.type === "cashout") {
+      text = `${name} cashed out ${amt} from bank`;
+      color = "gold"
+    }
+    
+  return (
+    <div key={i} style={{ borderBottom: "1px solid gray", padding: 8 }}>
+      <strong style= {{color}}>{text}</strong>
+
+      <div style={{ fontSize: 12, opacity: 0.6 }}>
+        {new Date(t.created_at).toLocaleString()}
+      </div>
+    </div>
+  );
+})}
+  </div>
+)}
+    </div>
+  );
+}

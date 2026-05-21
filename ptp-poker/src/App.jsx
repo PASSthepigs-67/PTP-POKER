@@ -8,6 +8,10 @@ export default function App() {
   const [username, setUsername] = useState("");
   const [players, setPlayers] = useState([]);
   const [amounts, setAmounts] = useState({});
+  const [transactions, setTransactions] = useState([]);
+  const [page, setPage] = useState("dashboard");
+  const [tab, setTab] = useState("players");
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   // 🔐 GET USER
   useEffect(() => {
@@ -23,6 +27,29 @@ export default function App() {
     const { data } = await supabase.from("players").select("*");
     if (data) setPlayers(data);
   };
+
+  //FETCH TRANSACTIONS (HISTORY)
+  const fetchTransactions = async () => {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(`
+      *,
+      players!player_id ( name )
+    `)
+    .order("created_at", { ascending: false });
+
+  console.log("TX FETCH:", data);
+  console.log("TX ERROR:", error);
+
+  if (data) setTransactions(data);
+};
+
+useEffect(() => {
+  if (tab === "history") {
+    console.log("FETCHING HISTORY...");
+    fetchTransactions();
+  }
+}, [tab]);
 
   // ⚡ REALTIME
   useEffect(() => {
@@ -72,6 +99,7 @@ export default function App() {
   .from("players")
   .select("*")
   .eq("name", username);
+  console.log(data)
 
 if (existing.length > 0) {
   alert("Username already taken");
@@ -165,16 +193,108 @@ if (existing.length > 0) {
 
   // 🏆 MAIN APP
   return (
-    <div style={{ padding: 20 }}>
-      <h1>🏆 PTP Poker</h1>
+    <div style={{ display: "flex" }}>
+    
+   {/* SIDEBAR */}
+<div style={{
+  width: 200,
+  background: "#111",
+  color: "white",
+  minHeight: "100vh",
+  padding: 10,
+  display: "flex",
+  flexDirection: "column"
+}}>
 
-      <button onClick={signOut}>Logout</button>
+  <h2>PTP POKER 🐷</h2>
+
+  {/* 🔴 LOGOUT */}
+  <div
+    onClick={signOut}
+    onMouseEnter={(e) => (e.currentTarget.style.background = "#9b0808")}
+    onMouseLeave={(e) => (e.currentTarget.style.background = "#ba1021")}
+    style={{
+      padding: 10,
+      borderRadius: 6,
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      background: "#ba1021"
+    }}
+  >
+    ❌ LOGOUT
+  </div>
+
+  <br />
+
+
+  {/* 📜 NAV */}
+  <div
+    onClick={() => setTab("players")}
+    onMouseEnter={(e) => (e.currentTarget.style.background = "#222")}
+    onMouseLeave={(e) =>
+      (e.currentTarget.style.background =
+        tab === "players" ? "#333" : "transparent")
+    }
+    style={{
+      padding: 10,
+      borderRadius: 6,
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      background: tab === "players" ? "#333" : "transparent",
+    }}
+  >
+    🏠 Main Table
+  </div>
+
+  <div
+  onClick={() => setTab("cards")}
+  onMouseEnter={(e) => (e.currentTarget.style.background = "#222")}
+  onMouseLeave={(e) =>
+    (e.currentTarget.style.background =
+      tab === "cards" ? "#333" : "transparent")
+  }
+  style={{
+    padding: 10,
+    borderRadius: 6,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    background: tab === "cards" ? "#333" : "transparent",
+  }}
+>
+  🃏 Player Stats
+</div>
+
+  <div
+    onClick={() => setTab("history")}
+    onMouseEnter={(e) => (e.currentTarget.style.background = "#222")}
+    onMouseLeave={(e) =>
+      (e.currentTarget.style.background =
+        tab === "history" ? "#333" : "transparent")
+    }
+    style={{
+      padding: 10,
+      borderRadius: 6,
+      cursor: "pointer",
+      transition: "all 0.2s ease",
+      background: tab === "history" ? "#333" : "transparent",
+    }}
+  >
+    📜 History
+  </div>
+
+</div>
+
+    {/* MAIN (YOUR EXISTING APP) */}
+    <div style={{ flex: 1, padding: 20}}>
+
+      {/* KEEP YOUR CURRENT CODE HERE */}
+
+
 
       <br /><br />
 
-
-      {/* TABLE */}
-      <table style={{ width: "100%", marginTop: 20 }}>
+        {/* TABLE */}
+      { tab === 'players' &&(<table style={{ width: "100%", marginTop: 20 }}>
         <thead>
           <tr>
             <th>#</th>
@@ -257,6 +377,14 @@ if (existing.length > 0) {
       .update({ chips: p.chips + amt })
       .eq("id", p.id);
 
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "chips",
+      amount: amt,
+    },
+  ]);
     setAmounts({ ...amounts, [p.id]: "" });
   }}>+ Chips</button>
       <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
@@ -264,6 +392,15 @@ if (existing.length > 0) {
       .from("players")
       .update({ chips: p.chips - amt })
       .eq("id", p.id);
+
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "chips",
+      amount: -amt,
+    },
+  ]);
 
     setAmounts({ ...amounts, [p.id]: "" });
   }}>- Chips</button>
@@ -277,6 +414,15 @@ if (existing.length > 0) {
       .update({ bank: p.bank + amt })
       .eq("id", p.id);
 
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "bank",
+      amount: amt,
+    },
+  ]);
+
     setAmounts({ ...amounts, [p.id]: "" });
   }}>+ Bank</button>
       <button disabled={!isOwner} style={{ flex: 1 }} onClick={async () => {
@@ -284,6 +430,15 @@ if (existing.length > 0) {
       .from("players")
       .update({ bank: p.bank - amt })
       .eq("id", p.id);
+
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "bank",
+      amount: -amt,
+    },
+  ]);
 
     setAmounts({ ...amounts, [p.id]: "" });
   }}>- Bank</button>
@@ -295,6 +450,15 @@ if (existing.length > 0) {
       .from("players")
       .update({ chips: p.chips + p.bank, bank: 0})
       .eq("id", p.id);
+
+      await supabase.from("transactions").insert([
+    {
+      player_id: p.id,
+      user_id: user.id,
+      type: "cashout",
+      amount: p.bank,
+    },
+  ]);
 
     setAmounts({ ...amounts, [p.id]: "" });
   }}>💰 Cash Out</button>
@@ -312,6 +476,107 @@ if (existing.length > 0) {
           })}
         </tbody>
       </table>
+      )}
+
+     {tab === "history" && (
+  <div>
+    <h2>Transaction History</h2>
+
+    {transactions && transactions.length > 0 ? (
+      transactions.map((t, i) => {
+        const name = t.players?.name || "Unknown";
+        const amt = Number(t.amount);
+
+        let color = amt > 0 ? "limegreen" : "red";
+        let text = "";
+
+        if (t.type === "chips") {
+          text = `${name}: ${amt > 0 ? "+" : ""}${amt} chips`;
+        }
+
+        if (t.type === "bank") {
+          text = `${name}: ${amt > 0 ? "+" : ""}${amt} bank`;
+        }
+
+        if (t.type === "cashout") {
+          text = `${name} cashed out ${amt} from bank`;
+          color = "gold";
+        }
+
+        return (
+          <div key={i} style={{ borderBottom: "1px solid gray", padding: 8 }}>
+            <strong style={{ color }}>{text}</strong>
+            <div style={{ fontSize: 12, opacity: 0.6 }}>
+              {new Date(t.created_at).toLocaleString()}
+            </div>
+          </div>
+        );
+      })
+    ) : (
+      <p>No transactions yet</p>
+    )}
+  </div>
+)}
+
+    {tab === "cards" && (
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+      gap: 16,
+    }}
+  >
+    {sortedPlayers.map((p) => {
+      const total = p.chips + p.bank;
+      const profit = total - 75;
+
+      return (
+        <div
+          key={p.id}
+          onClick={() => setSelectedPlayer(p)}
+          style={{
+            padding: 15,
+            borderRadius: 12,
+            background: "#1a1a2e",
+            cursor: "pointer",
+            transition: "0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.03)";
+            e.currentTarget.style.background = "#222";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.background = "#1a1a2e";
+          }}
+        >
+          <h3>{p.name}</h3>
+
+          <p>💰 Total: {total}</p>
+          <p>🪙 Chips: {p.chips}</p>
+          <p>🏦 Bank: {p.bank}</p>
+
+          <p
+            style={{
+              color: profit >= 0 ? "lime" : "red",
+              fontWeight: "bold",
+            }}
+          >
+            Profit: {profit}
+          </p>
+        </div>
+      );
+    })}
+  </div>
+)}
+
     </div>
+</div>
   );
 }
+
+
+
+
+
+     
